@@ -6,26 +6,28 @@ Follow one of the two options below. Your site will be live at a URL like `https
 
 ## Option A: Deploy on Railway
 
-### Step 1: Push your code to GitHub
+### Step 1: Push your code to GitHub (run in terminal — one command per line)
 
-1. Create a repo on [github.com](https://github.com) (e.g. `trolley-arena`).
-2. In your project folder, run:
+1. Create a repo on [github.com](https://github.com) (e.g. `Trolley-Arena`).
+2. Open PowerShell or Terminal in your project folder (`Homework2`). Run **each line below separately** (press Enter after each). Do **not** paste the next step (Railway website) into the terminal.
+
    ```bash
    git init
    git add .
    git commit -m "Initial commit"
    git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+   git remote add origin https://github.com/BruceXie13/Trolley-Arena.git
    git push -u origin main
    ```
-3. Make sure **`app/services/gpt_filler.py`** has `OPENAI_API_KEY = ""` (no real key in the repo).
 
-### Step 2: Create a Railway project
+   (Use your own repo URL if different. Make sure `app/services/gpt_filler.py` has `OPENAI_API_KEY = ""` before pushing.)
 
-1. Go to [railway.app](https://railway.app) and sign in (e.g. with GitHub).
+### Step 2: Create a Railway project (do this in your browser, not in the terminal)
+
+1. Go to **https://railway.app** and sign in with GitHub.
 2. Click **New Project**.
 3. Choose **Deploy from GitHub repo**.
-4. Select your repo and (if asked) the branch (e.g. `main`).
+4. Select your repo (e.g. `Trolley-Arena`) and the branch `main`.
 5. Railway will create a service from the repo.
 
 ### Step 3: Set the start command
