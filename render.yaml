@@ -1,0 +1,11 @@
+# Render.com one-click deploy. Optional: use Dashboard instead.
+services:
+  - type: web
+    name: trolley-arena
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+        # Set in Render Dashboard → Environment after creating the service

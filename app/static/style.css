@@ -1,0 +1,386 @@
+/* Trolley Problem Arena — refreshed UI */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0c0c12;
+  --bg-elevated: #12121a;
+  --card: #16161f;
+  --card-hover: #1a1a26;
+  --border: rgba(255,255,255,0.06);
+  --border-focus: rgba(139, 92, 246, 0.5);
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --operator: #8b5cf6;
+  --operator-glow: rgba(139, 92, 246, 0.35);
+  --majority: #22c55e;
+  --majority-dim: #16a34a;
+  --minority: #f43f5e;
+  --minority-dim: #e11d48;
+  --lost: #475569;
+  --argued: #fbbf24;
+  --success: #22c55e;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.25);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Header */
+.header {
+  padding: 1rem 1.5rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-card);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff 0%, #c4b5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.game-picker label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.game-picker input {
+  width: 260px;
+  padding: 0.5rem 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.game-picker input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--operator-glow);
+}
+
+.game-picker button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.game-picker button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.game-picker button:active {
+  transform: translateY(0);
+}
+
+#btnCreateDemo {
+  background: linear-gradient(135deg, var(--operator) 0%, #7c3aed 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--operator-glow);
+}
+
+#btnStart {
+  background: linear-gradient(135deg, var(--majority) 0%, var(--majority-dim) 100%);
+  color: #fff;
+}
+
+#btnLoad {
+  background: var(--card-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+#btnAdvance {
+  background: var(--card-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+#btnResolveRound {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+}
+
+#btnAddFiller, #btnTickFiller {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: #fff;
+}
+
+/* Main layout */
+.main {
+  padding: 1.5rem;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 1.5rem;
+}
+
+@media (max-width: 960px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* Board section */
+.board-section h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Phase stepper — progress style */
+.phase-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.phase-stepper .phase {
+  flex: 1;
+  padding: 0.5rem 0.4rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.phase-stepper .phase:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.phase-stepper .phase:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.phase-stepper .phase:not(:first-child) { margin-left: -1px; }
+
+.phase-stepper .phase.done {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.phase-stepper .phase.active {
+  background: linear-gradient(135deg, var(--operator) 0%, #6d28d9 100%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 20px var(--operator-glow);
+  z-index: 1;
+}
+
+/* Board container */
+.board-wrap {
+  background: linear-gradient(180deg, var(--card) 0%, var(--bg-elevated) 100%);
+  border-radius: var(--radius);
+  padding: 1rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.trolley-board {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-sm);
+}
+
+.board-legend {
+  margin: 0.75rem 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.legend { font-weight: 500; }
+.legend.operator { color: var(--operator); }
+.legend.majority { color: var(--majority); }
+.legend.minority { color: var(--minority); }
+.legend.lost { color: var(--lost); }
+.legend.argued { color: var(--argued); }
+
+/* Right panel cards */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.card:hover {
+  background: var(--card-hover);
+  border-color: rgba(255,255,255,0.08);
+}
+
+.card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#gameStatus, #roundPhase {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+#roundPhase {
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+#roleAssignments {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.feed {
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.feed::-webkit-scrollbar { width: 6px; }
+.feed::-webkit-scrollbar-track { background: transparent; }
+.feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.feed-item {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.feed-item:hover { background: rgba(255,255,255,0.02); }
+
+.feed-item .feed-type { color: var(--text-muted); font-size: 0.75rem; }
+.feed-item .feed-arg { color: var(--argued); font-weight: 500; }
+.feed-item .feed-text { color: var(--text); margin-top: 0.2rem; }
+
+#scoreboard, #coverage {
+  font-size: 0.9rem;
+}
+
+.score-row, .coverage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.score-row:last-child, .coverage-row:last-child { border-bottom: none; }
+
+.coverage-row .done { color: var(--success); font-weight: 500; }
+.coverage-row .pending { color: var(--text-muted); }
+
+/* Filler section */
+.filler-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filler-section label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.filler-section input[type="number"] {
+  width: 56px;
+  padding: 0.35rem 0.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.auto-tick-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.auto-tick-label input { accent-color: var(--operator); }
+
+/* Token SVG states */
+.token-svg {
+  transition: opacity 0.3s, filter 0.3s, transform 0.2s;
+}
+
+.token-svg.lost {
+  opacity: 0.4;
+  filter: grayscale(0.9);
+}
+
+.token-svg.survived {
+  filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.5));
+}
+
+.token-svg.argued circle:first-of-type {
+  stroke: var(--argued);
+  stroke-width: 2;
+}

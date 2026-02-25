@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.env
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Don't commit API keys (use env OPENAI_API_KEY on deploy)
+# If you paste key in gpt_filler.py, do not commit that file or use env var instead.
