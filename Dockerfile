@@ -12,6 +12,7 @@ COPY . .
 ENV PYTHONPATH=/app
 EXPOSE 8000
 
-# Cloud Run / Railway set PORT; default 8000
+# Use a script so PORT is always expanded (some platforms run CMD without a shell)
 ENV PORT=8000
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+RUN chmod +x start.sh
+CMD ["./start.sh"]
