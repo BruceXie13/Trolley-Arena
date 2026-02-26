@@ -18,6 +18,12 @@ from app.models.domain import (
 )
 from app.storage.store import store
 
+# Fixed round layout: 1 operator + 5 majority + 1 minority = 7 agents per round
+ROUND_OPERATOR = 1
+ROUND_MAJORITY = 5
+ROUND_MINORITY = 1
+ROUND_TOTAL = ROUND_OPERATOR + ROUND_MAJORITY + ROUND_MINORITY
+
 
 def _participation_key(game_id: str, agent_id: str) -> str:
     return f"{game_id}:{agent_id}"
@@ -28,7 +34,7 @@ def _log(game_id: str, event_type: EventType, payload: dict, round_id: Optional[
     store.add_event(e)
 
 
-def create_game(min_players: int = 3) -> Game:
+def create_game(min_players: int = 1) -> Game:
     g = Game.new(min_players=min_players)
     store.add_game(g)
     _log(g.id, EventType.game_created, {"min_players": min_players})
@@ -76,7 +82,8 @@ def _start_new_round(game_id: str) -> Round:
     g = store.get_game(game_id)
     parts = store.get_participations_for_game(game_id)
     agent_ids = [p.agent_id for p in parts]
-    # Role assignment: rotate so we make progress on coverage
+    if len(agent_ids) < ROUND_TOTAL:
+        raise ValueError(f"Need at least {ROUND_TOTAL} agents (1 operator, 5 majority, 1 minority)")
     # Pick operator: prefer someone who hasn't been operator
     parts_with_roles = [store.get_participation(game_id, aid) for aid in agent_ids]
     parts_with_roles = [p for p in parts_with_roles if p]
@@ -85,15 +92,19 @@ def _start_new_round(game_id: str) -> Round:
         operator_id = random.choice(never_operator).agent_id
     else:
         operator_id = random.choice(parts_with_roles).agent_id
-    rest = [aid for aid in agent_ids if aid != operator_id]
-    # Majority > minority; at least 1 each
-    n_majority = (len(rest) // 2) + 1 if len(rest) >= 2 else 1
-    n_minority = len(rest) - n_majority
-    if n_minority <= 0:
-        n_majority = 1
-        n_minority = len(rest) - 1
-    majority_ids = rest[:n_majority]
-    minority_ids = rest[n_majority:]
+    rest_pool = [aid for aid in agent_ids if aid != operator_id]
+    if len(rest_pool) < ROUND_MAJORITY + ROUND_MINORITY:
+        raise ValueError(f"Need at least {ROUND_TOTAL} agents (1 operator, 5 majority, 1 minority)")
+    # Assign so game can complete: prefer "never minority" for the 1 minority slot (operator already preferred "never operator")
+    parts_rest = [store.get_participation(game_id, aid) for aid in rest_pool]
+    parts_rest = [p for p in parts_rest if p]
+    never_minority = [p for p in parts_rest if not p.has_been_minority]
+    if never_minority:
+        minority_agent = random.choice(never_minority).agent_id
+    else:
+        minority_agent = random.choice(parts_rest).agent_id
+    majority_ids = [aid for aid in rest_pool if aid != minority_agent]
+    minority_ids = [minority_agent]
     r = Round.new(
         game_id=game_id,
         round_number=g.current_round_number,
@@ -304,6 +315,29 @@ def advance(game_id: str, action: str = "next_phase") -> Game:
             _log(g.id, EventType.game_completed, {})
         return store.get_game(game_id)
     raise ValueError("Unknown advance action")
+
+
+def try_auto_advance(game_id: str) -> bool:
+    """If the round/phase is complete (everyone spoke or round resolved), advance once. Returns True if an advance was made."""
+    g = store.get_game(game_id)
+    if not g:
+        return False
+    # Start next round if current round is resolved
+    if g.status == GameStatus.round_resolved:
+        advance(game_id, "next_phase")
+        return True
+    r = store.get_current_round(game_id)
+    if not r or r.game_id != game_id:
+        return False
+    # In debate phase: advance to next phase when everyone (majority + minority) has argued this phase
+    if r.phase in (Phase.phase_1, Phase.phase_2, Phase.phase_3):
+        argued = store.get_arguments_in_round_phase(r.id, r.phase)
+        argued_ids = {a.agent_id for a in argued}
+        required = set(r.majority_agent_ids) | set(r.minority_agent_ids)
+        if required and argued_ids >= required:
+            advance(game_id, "next_phase")
+            return True
+    return False
 
 
 # Convenience export

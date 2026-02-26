@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class CreateGameRequest(BaseModel):
-    min_players: int = 3
+    min_players: int = 1
 
 
 class CreateGameResponse(BaseModel):

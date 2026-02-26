@@ -65,6 +65,13 @@ def register_agent(game_id: str, body: RegisterAgentRequest):
 @router.post("/games/{game_id}/start")
 def start_game(game_id: str):
     try:
+        # Ensure at least 7 agents (1 operator, 5 majority, 1 minority) by adding fillers if needed
+        from app.services.game_service import ROUND_TOTAL
+        parts = store.get_participations_for_game(game_id)
+        need = ROUND_TOTAL - len(parts)
+        if need > 0:
+            from app.services.gpt_filler import add_filler_agents
+            add_filler_agents(game_id, need)
         g = game_service.start_game(game_id)
         return {"status": g.status.value, "message": "Game started"}
     except ValueError as e:
@@ -164,16 +171,13 @@ def get_open_actions(game_id: str, agent_id: str = Query(...)):
 
 @router.post("/demo/create")
 def demo_create():
-    """Create a game and register 3 demo agents for local testing."""
-    g = game_service.create_game(min_players=3)
-    agents = []
-    for name in ["Alice", "Bob", "Charlie"]:
-        _, a, _ = game_service.register_agent(g.id, name)
-        agents.append({"agent_id": a.id, "display_name": name})
+    """Create a game and register 1 demo agent. Start adds fillers to reach 7 (1 operator, 5 majority, 1 minority)."""
+    g = game_service.create_game(min_players=1)
+    _, a, _ = game_service.register_agent(g.id, "Alice")
     return {
         "game_id": g.id,
-        "agents": agents,
-        "message": "Call POST /api/games/{game_id}/start to start the game",
+        "agents": [{"agent_id": a.id, "display_name": "Alice"}],
+        "message": "Call POST /api/games/{game_id}/start to start (fillers added automatically if needed)",
     }
 
 
@@ -192,13 +196,25 @@ def add_filler(game_id: str, body: AddFillerRequest | None = None):
 
 
 @router.post("/games/{game_id}/tick-filler")
-def tick_filler(game_id: str):
-    """Let one GPT filler agent act (argument or decision) if they have a pending action."""
+def tick_filler(game_id: str, drain: bool = Query(False, description="If true, run filler ticks until no action and no advance (up to 25), so the phase can progress in one call")):
+    """Let one GPT filler agent act (argument or decision) if they have a pending action; auto-advance phase/round when done. Use ?drain=true to run until phase advances or no more actions."""
     g = store.get_game(game_id)
     if not g:
         raise HTTPException(status_code=404, detail="Game not found")
     from app.services.gpt_filler import execute_one_filler_action
     result = execute_one_filler_action(game_id)
-    return {"game_id": game_id, "action": result}
+    game_service.try_auto_advance(game_id)
+    if not drain:
+        return {"game_id": game_id, "action": result}
+    # Drain: keep ticking until nothing to do or we've done enough
+    actions = [result] if result else []
+    for _ in range(24):
+        r2 = execute_one_filler_action(game_id)
+        advanced = game_service.try_auto_advance(game_id)
+        if r2:
+            actions.append(r2)
+        if not r2 and not advanced:
+            break
+    return {"game_id": game_id, "action": result, "drained": True, "actions_count": len(actions)}
 
 

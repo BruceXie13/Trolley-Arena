@@ -59,6 +59,67 @@ body {
   background-clip: text;
 }
 
+/* Minimal header by default; full host bar ONLY when "Host / create game" is clicked */
+.header-watch-bar {
+  display: flex !important;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.header-host-bar {
+  display: none !important;
+}
+body.host-mode .header-watch-bar {
+  display: none !important;
+}
+body.host-mode .header-host-bar {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.watch-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.watch-game-id-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-sm);
+  width: 220px;
+  max-width: 280px;
+}
+.watch-game-id-input::placeholder {
+  color: var(--text-muted);
+}
+.btn-load-minimal {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  background: var(--operator);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-load-minimal:hover {
+  filter: brightness(1.1);
+}
+.watch-link {
+  font-size: 0.85rem;
+  color: var(--operator);
+  text-decoration: none;
+}
+.watch-link:hover {
+  text-decoration: underline;
+}
+
 .game-picker {
   display: flex;
   align-items: center;
@@ -397,6 +458,18 @@ body {
   flex-wrap: wrap;
 }
 
+.game-id-hint {
+  font-weight: normal;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.filler-section-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
 .filler-section label {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -423,6 +496,16 @@ body {
 }
 
 .auto-tick-label input { accent-color: var(--operator); }
+
+.filler-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+  min-height: 1.2em;
+}
+.filler-status-visible {
+  color: var(--text);
+}
 
 /* Token SVG states */
 .token-svg {

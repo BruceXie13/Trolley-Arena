@@ -6,6 +6,7 @@
 
   const el = (id) => document.getElementById(id);
   const gameIdInput = el('gameId');
+  const gameIdMinimalInput = el('gameIdMinimal');
   const phaseStepper = el('phaseStepper');
   const trolleyBoard = el('trolleyBoard');
   const operatorName = el('operatorName');
@@ -19,16 +20,20 @@
   const roleAssignments = el('roleAssignments');
   const feedEl = el('feed');
   const dialogueEl = el('dialogue');
+  const fillerStatusEl = el('fillerStatus');
   const scoreboardEl = el('scoreboard');
   const coverageEl = el('coverage');
 
   function getGameId() {
-    return (gameIdInput && gameIdInput.value.trim()) || gameId;
+    const fromMinimal = gameIdMinimalInput && gameIdMinimalInput.value.trim();
+    const fromHost = gameIdInput && gameIdInput.value.trim();
+    return fromMinimal || fromHost || gameId;
   }
 
   function setGameId(id) {
     gameId = id;
     if (gameIdInput) gameIdInput.value = id;
+    if (gameIdMinimalInput) gameIdMinimalInput.value = id;
   }
 
   function initials(name) {
@@ -150,10 +155,18 @@
   }
 
   function renderStatus(state) {
-    gameStatusEl.textContent = 'Status: ' + (state ? state.status : '—');
-    roundPhaseEl.textContent = state
-      ? `Round ${state.current_round_number} · ${state.current_phase || '—'}`
-      : '—';
+    if (!state) {
+      if (getGameId()) {
+        gameStatusEl.textContent = 'Game not found';
+        roundPhaseEl.textContent = 'Server may have restarted (games are in-memory). Get a new watch link from the agent.';
+      } else {
+        gameStatusEl.textContent = '—';
+        roundPhaseEl.textContent = '—';
+      }
+      return;
+    }
+    gameStatusEl.textContent = 'Status: ' + state.status;
+    roundPhaseEl.textContent = `Round ${state.current_round_number} · ${state.current_phase || '—'}`;
   }
 
   function renderRoleAssignments(state) {
@@ -286,6 +299,7 @@
     const score = await fetchScoreboard();
     renderScoreboard(score);
     renderCoverage(score);
+    setFillerStatus('');
   }
 
   function startPolling() {
@@ -300,7 +314,7 @@
       const data = await r.json();
       setGameId(data.game_id);
       startPolling();
-      alert('Demo game created. To see dialogue: click "Add fillers" (e.g. 2), then "Start". During Phase 1–3 click "Run fillers" or enable "Auto-run".');
+      alert('Demo game created. Click "Start" to begin. Fillers are added automatically (5 majority, 1 minority, 1 operator). Phases advance automatically with Auto-run.');
     } catch (e) {
       alert('Failed: ' + e.message);
     }
@@ -327,7 +341,7 @@
   async function loadGame() {
     const id = getGameId();
     if (!id) {
-      alert('Enter a game ID');
+      alert('Paste the game ID (e.g. from your agent) and click Load to watch the game live.');
       return;
     }
     setGameId(id);
@@ -396,19 +410,30 @@
     }
   }
 
+  function setFillerStatus(msg) {
+    if (fillerStatusEl) {
+      fillerStatusEl.textContent = msg || '';
+      fillerStatusEl.className = 'filler-status' + (msg ? ' filler-status-visible' : '');
+    }
+  }
+
   async function tickFiller() {
     const id = getGameId();
     if (!id) return;
+    setFillerStatus('');
     try {
       const r = await fetch(API + '/games/' + encodeURIComponent(id) + '/tick-filler', { method: 'POST' });
       const data = await r.json();
       if (data.action) {
+        setFillerStatus(data.action);
         startPolling();
-      } else if (dialogueEl) {
-        dialogueEl.innerHTML = '<p class="dialogue-empty">No filler action right now. Add fillers <strong>before</strong> Start, then Run fillers during Phase 1–3.</p>';
-        setTimeout(startPolling, 4000);
+      } else {
+        setFillerStatus('No filler action right now.');
+        startPolling();
       }
-    } catch (_) {}
+    } catch (_) {
+      setFillerStatus('Run fillers failed.');
+    }
   }
 
   let autoTickInterval = null;
@@ -442,11 +467,66 @@
   el('btnTickFiller').addEventListener('click', () => { tickFiller().then(startPolling); });
   el('autoTickFiller').addEventListener('change', updateAutoTick);
 
-  // Auto-load game_id from URL query (e.g. ?game_id=xxx)
+  // Minimal bar is default; "Host / create game" shows full controls
   const params = new URLSearchParams(window.location.search);
   const urlGameId = params.get('game_id');
-  if (urlGameId && gameIdInput) {
+  const watchBar = el('watchBar');
+  const hostBar = el('hostBar');
+  const autoTickWatch = el('autoTickFillerWatch');
+  const linkShowHost = el('linkShowHost');
+  const linkShowMinimal = el('linkShowMinimal');
+  const btnLoadMinimal = el('btnLoadMinimal');
+
+  // Force minimal UI on load (in case cached CSS shows host bar)
+  if (hostBar) hostBar.style.display = 'none';
+  if (watchBar) watchBar.style.display = 'flex';
+
+  if (autoTickWatch) {
+    autoTickWatch.addEventListener('change', function () {
+      if (el('autoTickFiller')) el('autoTickFiller').checked = autoTickWatch.checked;
+      updateAutoTick();
+    });
+  }
+  if (linkShowHost) {
+    linkShowHost.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.add('host-mode');
+      if (hostBar) hostBar.style.display = '';
+      if (watchBar) watchBar.style.display = 'none';
+    });
+  }
+  if (linkShowMinimal) {
+    linkShowMinimal.addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.remove('host-mode');
+      if (hostBar) hostBar.style.display = 'none';
+      if (watchBar) watchBar.style.display = '';
+    });
+  }
+  if (btnLoadMinimal) {
+    btnLoadMinimal.addEventListener('click', function () {
+      const id = (gameIdMinimalInput && gameIdMinimalInput.value.trim()) || getGameId();
+      if (!id) {
+        alert('Paste a game ID (e.g. from your agent) and click Load to watch.');
+        return;
+      }
+      setGameId(id);
+      startPolling();
+      updateAutoTick();
+    });
+  }
+  if (gameIdMinimalInput && gameIdInput) {
+    gameIdMinimalInput.addEventListener('input', function () {
+      if (gameIdInput) gameIdInput.value = gameIdMinimalInput.value;
+    });
+    gameIdInput.addEventListener('input', function () {
+      if (gameIdMinimalInput) gameIdMinimalInput.value = gameIdInput.value;
+    });
+  }
+
+  if (urlGameId) {
     setGameId(urlGameId.trim());
     startPolling();
+    updateAutoTick();
   }
 })();
