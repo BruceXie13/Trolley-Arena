@@ -422,7 +422,7 @@
     if (!id) return;
     setFillerStatus('');
     try {
-      const r = await fetch(API + '/games/' + encodeURIComponent(id) + '/tick-filler', { method: 'POST' });
+      const r = await fetch(API + '/games/' + encodeURIComponent(id) + '/tick-filler?drain=true', { method: 'POST' });
       const data = await r.json();
       if (data.action) {
         setFillerStatus(data.action);
