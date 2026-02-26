@@ -12,7 +12,6 @@ COPY . .
 ENV PYTHONPATH=/app
 EXPOSE 8000
 
-# Use a script so PORT is always expanded (some platforms run CMD without a shell)
+# No shell or port arg: Python reads PORT from env (works when platform overrides CMD)
 ENV PORT=8000
-RUN chmod +x start.sh
-CMD ["./start.sh"]
+CMD ["python", "run.py"]
