@@ -239,6 +239,22 @@ body {
 }
 
 .legend { font-weight: 500; }
+
+/* Dialogue underneath the legend (Operator, Majority, etc.) */
+.board-dialogue {
+  margin-top: 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  min-height: 120px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.board-dialogue .dialogue {
+  max-height: none;
+}
 .legend.operator { color: var(--operator); }
 .legend.majority { color: var(--majority); }
 .legend.minority { color: var(--minority); }
@@ -309,6 +325,35 @@ body {
 }
 
 .feed-item:hover { background: rgba(255,255,255,0.02); }
+
+/* Debate dialogue (agent arguments as chat) */
+.card-dialogue .dialogue {
+  max-height: 280px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+.dialogue-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.dialogue-line {
+  margin-bottom: 0.75rem;
+}
+.dialogue-meta {
+  display: block;
+  color: var(--argued);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.dialogue-bubble {
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--operator);
+  padding: 0.4rem 0.6rem;
+  border-radius: 0 6px 6px 0;
+  color: var(--text);
+}
 
 .feed-item .feed-type { color: var(--text-muted); font-size: 0.75rem; }
 .feed-item .feed-arg { color: var(--argued); font-weight: 500; }

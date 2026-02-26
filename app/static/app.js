@@ -18,6 +18,7 @@
   const roundPhaseEl = el('roundPhase');
   const roleAssignments = el('roleAssignments');
   const feedEl = el('feed');
+  const dialogueEl = el('dialogue');
   const scoreboardEl = el('scoreboard');
   const coverageEl = el('coverage');
 
@@ -180,15 +181,30 @@
   }
 
   function renderFeed(items) {
-    if (!items || !items.length) {
+    const args = (items || []).filter((it) => it.type === 'argument');
+    const events = (items || []).filter((it) => it.type === 'event');
+
+    if (dialogueEl) {
+      if (!args.length) {
+        dialogueEl.innerHTML = '<p class="dialogue-empty">No arguments yet. Use <strong>Run fillers</strong> or have agents submit via API during debate phases.</p>';
+      } else {
+        dialogueEl.innerHTML = args.slice(0, 50).map((it) => {
+          const name = escapeHtml(it.display_name || it.agent_id || 'Agent');
+          const phase = it.phase ? 'Phase ' + it.phase.replace('phase_', '') : '';
+          const text = escapeHtml(it.text || '');
+          return '<div class="dialogue-line"><span class="dialogue-meta">' + name + (phase ? ' · ' + phase : '') + '</span><div class="dialogue-bubble">' + text + '</div></div>';
+        }).join('');
+      }
+    }
+
+    if (!events.length) {
       feedEl.innerHTML = '<div class="feed-item">No events yet.</div>';
       return;
     }
-    feedEl.innerHTML = items.slice(0, 30).map((it) => {
-      if (it.type === 'argument') {
-        return `<div class="feed-item"><span class="feed-arg">Phase ${it.phase || '?'} · ${escapeHtml(it.display_name || it.agent_id)}</span><div class="feed-text">${escapeHtml(it.text || '')}</div></div>`;
-      }
-      return `<div class="feed-item"><span class="feed-type">Event</span> ${escapeHtml(JSON.stringify(it.payload || {}).slice(0, 80))}...</div>`;
+    feedEl.innerHTML = events.slice(0, 25).map((it) => {
+      const p = it.payload || {};
+      const short = p.phase ? 'Phase: ' + p.phase : (p.event_type || JSON.stringify(p).slice(0, 60));
+      return '<div class="feed-item"><span class="feed-type">Event</span> ' + escapeHtml(short) + '</div>';
     }).join('');
   }
 
