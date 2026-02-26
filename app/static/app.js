@@ -180,13 +180,24 @@
     return div.innerHTML;
   }
 
-  function renderFeed(items) {
+  function renderFeed(items, state) {
     const args = (items || []).filter((it) => it.type === 'argument');
     const events = (items || []).filter((it) => it.type === 'event');
 
     if (dialogueEl) {
       if (!args.length) {
-        dialogueEl.innerHTML = '<p class="dialogue-empty">No arguments yet. Use <strong>Run fillers</strong> or have agents submit via API during debate phases.</p>';
+        const hasFillers = state && state.has_filler_agents;
+        const phase = state && state.current_phase;
+        const inDebate = phase === 'phase_1' || phase === 'phase_2' || phase === 'phase_3';
+        let msg = 'No arguments yet. ';
+        if (!hasFillers) {
+          msg += 'Add fillers <strong>before</strong> Start, then use Run fillers during Phase 1–3. This game has no filler agents.';
+        } else if (inDebate) {
+          msg += 'Click <strong>Run fillers</strong> (or enable Auto-run) to see GPT agents argue.';
+        } else {
+          msg += 'Run fillers only works during Phase 1, 2, or 3. Start a new game and use Run fillers in debate phases.';
+        }
+        dialogueEl.innerHTML = '<p class="dialogue-empty">' + msg + '</p>';
       } else {
         dialogueEl.innerHTML = args.slice(0, 50).map((it) => {
           const name = escapeHtml(it.display_name || it.agent_id || 'Agent');
@@ -271,7 +282,7 @@
     renderRoleAssignments(state);
     renderBoard(state);
     const feed = await fetchFeed();
-    renderFeed(feed);
+    renderFeed(feed, state);
     const score = await fetchScoreboard();
     renderScoreboard(score);
     renderCoverage(score);
@@ -289,7 +300,7 @@
       const data = await r.json();
       setGameId(data.game_id);
       startPolling();
-      alert('Demo game created. Click "Start game" to begin, or run the simulator.');
+      alert('Demo game created. To see dialogue: click "Add fillers" (e.g. 2), then "Start". During Phase 1–3 click "Run fillers" or enable "Auto-run".');
     } catch (e) {
       alert('Failed: ' + e.message);
     }
@@ -391,7 +402,12 @@
     try {
       const r = await fetch(API + '/games/' + encodeURIComponent(id) + '/tick-filler', { method: 'POST' });
       const data = await r.json();
-      if (data.action) startPolling();
+      if (data.action) {
+        startPolling();
+      } else if (dialogueEl) {
+        dialogueEl.innerHTML = '<p class="dialogue-empty">No filler action right now. Add fillers <strong>before</strong> Start, then Run fillers during Phase 1–3.</p>';
+        setTimeout(startPolling, 4000);
+      }
     } catch (_) {}
   }
 

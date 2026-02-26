@@ -104,6 +104,8 @@ def build_game_state(game_id: str, version: int = 0) -> Optional[GameStateRespon
             board.animation_version = 1
             round_outcome = {"survivors": survivors, "lost": lost}
 
+    has_filler_agents = any(store.is_filler(p.agent_id) for p in parts)
+
     return GameStateResponse(
         game_id=g.id,
         status=g.status.value,
@@ -121,6 +123,7 @@ def build_game_state(game_id: str, version: int = 0) -> Optional[GameStateRespon
         last_event_at=last_event_at,
         board=board,
         version=version,
+        has_filler_agents=has_filler_agents,
     )
 
 

@@ -63,6 +63,7 @@ class GameStateResponse(BaseModel):
     last_event_at: Optional[datetime] = None
     board: Optional[BoardState] = None
     version: int = 0
+    has_filler_agents: bool = False
 
 
 class FeedItem(BaseModel):
