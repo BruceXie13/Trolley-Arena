@@ -196,25 +196,30 @@ def add_filler(game_id: str, body: AddFillerRequest | None = None):
 
 
 @router.post("/games/{game_id}/tick-filler")
-def tick_filler(game_id: str, drain: bool = Query(False, description="If true, run filler ticks until no action and no advance (up to 25), so the phase can progress in one call")):
-    """Let one GPT filler agent act (argument or decision) if they have a pending action; auto-advance phase/round when done. Use ?drain=true to run until phase advances or no more actions."""
+def tick_filler(
+    game_id: str,
+    drain: bool = Query(True, description="Run filler ticks until no action and no advance (default true). Set ?drain=false for a single tick only."),
+):
+    """Let filler agents act and auto-advance when done. Always returns 200 so runners can keep polling; errors are in the body."""
     g = store.get_game(game_id)
     if not g:
         raise HTTPException(status_code=404, detail="Game not found")
     from app.services.gpt_filler import execute_one_filler_action
-    result = execute_one_filler_action(game_id)
-    game_service.try_auto_advance(game_id)
-    if not drain:
-        return {"game_id": game_id, "action": result}
-    # Drain: keep ticking until nothing to do or we've done enough
-    actions = [result] if result else []
-    for _ in range(24):
-        r2 = execute_one_filler_action(game_id)
-        advanced = game_service.try_auto_advance(game_id)
-        if r2:
-            actions.append(r2)
-        if not r2 and not advanced:
-            break
-    return {"game_id": game_id, "action": result, "drained": True, "actions_count": len(actions)}
+    try:
+        result = execute_one_filler_action(game_id)
+        game_service.try_auto_advance(game_id)
+        if not drain:
+            return {"game_id": game_id, "action": result}
+        actions = [result] if result else []
+        for _ in range(24):
+            r2 = execute_one_filler_action(game_id)
+            advanced = game_service.try_auto_advance(game_id)
+            if r2:
+                actions.append(r2)
+            if not r2 and not advanced:
+                break
+        return {"game_id": game_id, "action": result, "drained": True, "actions_count": len(actions)}
+    except Exception as e:
+        return {"game_id": game_id, "action": None, "error": str(e), "drained": False}
 
 

@@ -318,25 +318,27 @@ def advance(game_id: str, action: str = "next_phase") -> Game:
 
 
 def try_auto_advance(game_id: str) -> bool:
-    """If the round/phase is complete (everyone spoke or round resolved), advance once. Returns True if an advance was made."""
-    g = store.get_game(game_id)
-    if not g:
-        return False
-    # Start next round if current round is resolved
-    if g.status == GameStatus.round_resolved:
-        advance(game_id, "next_phase")
-        return True
-    r = store.get_current_round(game_id)
-    if not r or r.game_id != game_id:
-        return False
-    # In debate phase: advance to next phase when everyone (majority + minority) has argued this phase
-    if r.phase in (Phase.phase_1, Phase.phase_2, Phase.phase_3):
-        argued = store.get_arguments_in_round_phase(r.id, r.phase)
-        argued_ids = {a.agent_id for a in argued}
-        required = set(r.majority_agent_ids) | set(r.minority_agent_ids)
-        if required and argued_ids >= required:
+    """If the round/phase is complete (everyone spoke or round resolved), advance once. Returns True if an advance was made. Never raises."""
+    try:
+        g = store.get_game(game_id)
+        if not g:
+            return False
+        if g.status == GameStatus.round_resolved:
             advance(game_id, "next_phase")
             return True
+        r = store.get_current_round(game_id)
+        if not r or r.game_id != game_id:
+            return False
+        # Operator does NOT argue; only the 6 track agents (majority + minority) must argue to advance
+        if r.phase in (Phase.phase_1, Phase.phase_2, Phase.phase_3):
+            argued = store.get_arguments_in_round_phase(r.id, r.phase)
+            argued_ids = {a.agent_id for a in argued}
+            required = set(r.majority_agent_ids) | set(r.minority_agent_ids)
+            if required and argued_ids >= required:
+                advance(game_id, "next_phase")
+                return True
+    except Exception:
+        return False
     return False
 
 
