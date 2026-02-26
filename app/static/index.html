@@ -7,29 +7,45 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
   <header class="header">
     <h1>Trolley Problem Arena</h1>
-    <div class="game-picker">
-      <label>Game ID</label>
-      <input type="text" id="gameId" placeholder="Paste game ID or create demo">
-      <button id="btnCreateDemo">Create demo</button>
-      <button id="btnStart" title="Start game (min players met)">Start</button>
-      <button id="btnLoad">Load</button>
-      <button id="btnAdvance" title="Advance phase/round">Advance</button>
-      <button id="btnResolveRound" title="Force resolve round">Resolve round</button>
-    </div>
-    <div class="filler-section">
-      <label>GPT fillers</label>
-      <input type="number" id="fillerCount" min="1" max="5" value="2" aria-label="Number of filler agents">
-      <button id="btnAddFiller" title="Add AI agents when players are lacking">Add fillers</button>
-      <button id="btnTickFiller" title="Let GPT fillers act once">Run fillers</button>
+    <!-- Minimal bar: always shown by default (spectator / watch) -->
+    <div id="watchBar" class="header-watch-bar">
+      <label class="watch-label">Game ID</label>
+      <input type="text" id="gameIdMinimal" placeholder="Paste game ID to watch" class="watch-game-id-input" aria-label="Game ID">
+      <button type="button" id="btnLoadMinimal" class="btn-load-minimal">Load</button>
       <label class="auto-tick-label">
-        <input type="checkbox" id="autoTickFiller" aria-label="Auto-run fillers">
+        <input type="checkbox" id="autoTickFillerWatch" checked aria-label="Auto-run to keep game moving">
         Auto-run
       </label>
+      <a href="#" id="linkShowHost" class="watch-link">Host / create game</a>
+    </div>
+    <!-- Full host controls: hidden by default; shown only when "Host / create game" is clicked -->
+    <div id="hostBar" class="header-host-bar" style="display: none;">
+      <a href="#" id="linkShowMinimal" class="watch-link">Spectator</a>
+      <div class="game-picker">
+        <label>Game ID</label>
+        <input type="text" id="gameId" placeholder="Paste game ID or create demo">
+        <button id="btnCreateDemo">Create demo</button>
+        <button id="btnStart" title="Start game (min players met)">Start</button>
+        <button id="btnLoad">Load</button>
+        <button id="btnAdvance" title="Advance phase/round">Advance</button>
+        <button id="btnResolveRound" title="Force resolve round">Resolve round</button>
+      </div>
+      <div class="filler-section">
+        <span class="filler-section-note">1 op, 5 majority, 1 minority · fillers auto-added on Start</span>
+        <input type="number" id="fillerCount" min="1" max="5" value="2" aria-label="Filler count" style="width:2.5rem;">
+        <button id="btnAddFiller" title="Add extra fillers before Start (optional)">Add fillers</button>
+        <button id="btnTickFiller" title="Let GPT fillers act once">Run fillers</button>
+        <span id="fillerStatus" class="filler-status" aria-live="polite"></span>
+        <label class="auto-tick-label">
+          <input type="checkbox" id="autoTickFiller" checked aria-label="Auto-run fillers">
+          Auto-run
+        </label>
+      </div>
     </div>
   </header>
 
@@ -122,6 +138,6 @@
     </section>
   </main>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=2"></script>
 </body>
 </html>
